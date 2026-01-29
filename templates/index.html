@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mental Health Text Classifier</title>
+
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#0b2b2a;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --text:#e5e7eb;
+      --muted:#a1a1aa;
+      --border: rgba(255,255,255,.10);
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+
+      /* defaults, overridden by theme */
+      --accent: #7c3aed;
+      --accentBg: rgba(124, 58, 237, 0.12);
+      --accentBorder: rgba(124, 58, 237, 0.35);
+    }
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      min-height:100vh;
+      background:
+        radial-gradient(1100px 700px at 20% 20%, rgba(124,58,237,.28), transparent 60%),
+        radial-gradient(900px 600px at 85% 25%, rgba(16,185,129,.22), transparent 60%),
+        radial-gradient(900px 600px at 80% 90%, rgba(59,130,246,.20), transparent 60%),
+        linear-gradient(140deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap{max-width: 1050px; margin: 0 auto; padding: 70px 20px 60px;}
+    .title{font-size: 44px; font-weight: 800; letter-spacing:-.03em; margin:0 0 6px;}
+    .subtitle{margin:0; color:var(--muted); max-width: 780px; line-height:1.5;}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      backdrop-filter: blur(10px);
+    }
+    .dot{width:10px;height:10px;border-radius:50%; background: var(--accent); box-shadow: 0 0 0 3px rgba(255,255,255,.05);}
+
+    .grid{
+      margin-top: 26px;
+      display:grid;
+      grid-template-columns: 1.25fr .9fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+    }
+    .cardHeader{
+      padding: 18px 18px 0;
+      display:flex; justify-content: space-between; align-items:center;
+    }
+    .cardTitle{font-weight: 700; margin:0; font-size: 15px; color:#f3f4f6;}
+    .cardBody{padding: 16px 18px 18px;}
+
+    textarea{
+      width:100%;
+      min-height: 210px;
+      resize: vertical;
+      padding: 14px 14px;
+      border-radius: 14px;
+      outline:none;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      font-size: 14px;
+      line-height:1.45;
+    }
+    textarea:focus{
+      border-color: var(--accentBorder);
+      box-shadow: 0 0 0 4px rgba(124,58,237,.10);
+    }
+
+    .actions{
+      margin-top: 12px;
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      justify-content: flex-start;
+    }
+
+    button{
+      border:0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(59,130,246,.75));
+      cursor:pointer;
+      box-shadow: 0 10px 30px rgba(124,58,237,.25);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    button:hover{transform: translateY(-1px); filter: brightness(1.05);}
+    button:active{transform: translateY(0);}
+
+    .hint{color:var(--muted); font-size: 13px; line-height:1.4;}
+
+    /* Output */
+    .outCard{
+      border: 1px solid var(--accentBorder);
+      background: linear-gradient(180deg, var(--accentBg), rgba(255,255,255,.04));
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid var(--accentBorder);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .meterWrap{
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .meterTop{
+      display:flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .meterLabel{font-weight: 700; color:#f3f4f6;}
+    .meterPct{color: var(--muted); font-size: 13px;}
+    .bar{
+      margin-top: 10px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.10);
+      position: relative;
+    }
+    .fill{
+      height:100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), rgba(255,255,255,.25));
+      box-shadow: 0 10px 26px rgba(0,0,0,.35) inset;
+      transition: width 900ms cubic-bezier(.2,.8,.2,1);
+      position: relative;
+    }
+    .fill::after{
+      content:"";
+      position:absolute;
+      top:0; right:0;
+      width: 40px; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.35));
+      opacity:.6;
+      transform: translateX(100%);
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes shimmer{
+      0%{transform: translateX(-80px); opacity:.0;}
+      30%{opacity:.6;}
+      100%{transform: translateX(80px); opacity:.0;}
+    }
+
+    .topk{
+      margin-top: 14px;
+      display:grid;
+      gap: 10px;
+    }
+    .row{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: #e5e7eb;
+      font-size: 13px;
+    }
+    .row b{color:#fff;}
+    .note{
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12.8px;
+      line-height:1.45;
+    }
+
+    @media (max-width: 920px){
+      .grid{grid-template-columns: 1fr; }
+      .title{font-size: 38px;}
+    }
+  </style>
+</head>
+
+<body
+  {% if theme %}
+    style="--accent: {{ theme.accent }}; --accentBg: {{ theme.bg }}; --accentBorder: {{ theme.border }};"
+  {% endif %}
+>
+  <div class="wrap">
+    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+      <div>
+        <h1 class="title">Mental Health Text Classifier</h1>
+        <p class="subtitle">
+          Baseline <b>TF-IDF + Logistic Regression</b> demo (educational). Output is probabilistic, not a diagnosis.
+        </p>
+      </div>
+      <div class="pill">
+        <span class="dot"></span>
+        <span>Local server: 127.0.0.1:5000</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: INPUT -->
+      <div class="card">
+        <div class="cardHeader">
+          <p class="cardTitle">Enter text</p>
+        </div>
+        <div class="cardBody">
+          <form method="POST" action="{{ url_for('predict') }}">
+            <textarea name="text" placeholder="Type a sentence or a paragraph... (more context improves reliability)" required>{{ text or "" }}</textarea>
+            <div class="actions">
+              <button type="submit">Predict</button>
+              <div class="hint">Tip: longer, context-rich text gives more reliable predictions.</div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- RIGHT: OUTPUT -->
+      <div class="card outCard">
+        <div class="cardHeader">
+          <p class="cardTitle">Prediction Output</p>
+          {% if prediction %}
+            <span class="badge"><span class="dot"></span>{{ prediction }}</span>
+          {% endif %}
+        </div>
+
+        <div class="cardBody">
+          {% if prediction %}
+            <div class="meterWrap">
+              <div class="meterTop">
+                <div class="meterLabel">Confidence meter</div>
+                <div class="meterPct">{{ confidence_pct }}%</div>
+              </div>
+
+              <div class="bar">
+                <div id="fill" class="fill" data-pct="{{ confidence_pct }}"></div>
+              </div>
+            </div>
+
+            {% if topk %}
+              <div class="topk">
+                {% for item in topk %}
+                  <div class="row">
+                    <div><b>{{ item.label }}</b></div>
+                    <div>{{ item.pct }}%</div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="note">
+              Note: This is a class project demo. For real deployment, add input validation, model version control,
+              and ethical safeguards (privacy, bias checks, disclaimers).
+            </div>
+          {% else %}
+            <div class="note">
+              Submit text to see the predicted label and confidence score.
+              <br><br>
+              If you see “404 /predict”, your button is calling a route that doesn’t exist.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Animate confidence bar after page loads
+    (function(){
+      const fill = document.getElementById("fill");
+      if(!fill) return;
+      const pct = Number(fill.getAttribute("data-pct") || "0");
+      // small delay so animation is visible
+      setTimeout(() => { fill.style.width = Math.max(0, Math.min(100, pct)) + "%"; }, 80);
+    })();
+  </script>
+</body>
+</html>
